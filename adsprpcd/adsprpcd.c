@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2016, 2020, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2016, 2020-2021, The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -31,49 +31,56 @@
 #define VERIFY_PRINT_ERROR
 #endif
 
-#define VERIFY_EPRINTF ALOGE
-#define VERIFY_IPRINTF ALOGI
+#define VERIFY_PRINT_INFO 0
 
 #include <stdio.h>
 #include <dlfcn.h>
 #include <unistd.h>
+#include "verify.h"
+#include "AEEStdErr.h"
 
-#include <log/log.h>
 
 #ifndef ADSP_DEFAULT_LISTENER_NAME
 #define ADSP_DEFAULT_LISTENER_NAME "libadsp_default_listener.so"
 #endif
-
-#define AEE_ECONNREFUSED 0x72
+#ifndef ADSP_LIBHIDL_NAME
+#define ADSP_LIBHIDL_NAME "libhidlbase.so"
+#endif
 
 typedef int (*adsp_default_listener_start_t)(int argc, char *argv[]);
 
 int main(int argc, char *argv[]) {
 
-  int nErr = 0;
-  void *adsphandler = NULL;
-  adsp_default_listener_start_t listener_start;
+    int nErr = 0;
+    void *adsphandler = NULL, *libhidlbaseHandler = NULL;
+    adsp_default_listener_start_t listener_start;
 
-  VERIFY_EPRINTF("audio adsp daemon starting");
-  while (1) {
-    if(NULL != (adsphandler = dlopen(ADSP_DEFAULT_LISTENER_NAME, RTLD_NOW))) {
-      if(NULL != (listener_start =
-        (adsp_default_listener_start_t)dlsym(adsphandler, "adsp_default_listener_start"))) {
-        VERIFY_IPRINTF("adsp_default_listener_start called");
-        nErr = listener_start(argc, argv);
-      }
-      if(0 != dlclose(adsphandler)) {
-        VERIFY_EPRINTF("dlclose failed");
-      }
-    } else {
-      VERIFY_EPRINTF("audio adsp daemon error %s", dlerror());
+    VERIFY_EPRINTF("audio adsp daemon starting");
+    if(NULL != (libhidlbaseHandler = dlopen(ADSP_LIBHIDL_NAME, RTLD_NOW))) {
+        while (1) {
+            if(NULL != (adsphandler = dlopen(ADSP_DEFAULT_LISTENER_NAME, RTLD_NOW))) {
+                if(NULL != (listener_start =
+                    (adsp_default_listener_start_t)dlsym(adsphandler,
+                    "adsp_default_listener_start"))) {
+                    VERIFY_IPRINTF("adsp_default_listener_start called");
+                    nErr = listener_start(argc, argv);
+                }
+                if(0 != dlclose(adsphandler)) {
+                    VERIFY_EPRINTF("dlclose failed");
+                }
+            } else {
+                VERIFY_EPRINTF("audio adsp daemon error %s", dlerror());
+            }
+            if (nErr == AEE_ECONNREFUSED) {
+                VERIFY_EPRINTF("fastRPC device driver is disabled, retrying...");
+            }
+            VERIFY_EPRINTF("audio adsp daemon will restart after 25ms...");
+            usleep(25000);
+        }
+        if(0 != dlclose(libhidlbaseHandler)) {
+            VERIFY_EPRINTF("libhidlbase dlclose failed");
+        }
     }
-    if (nErr == AEE_ECONNREFUSED) {
-      VERIFY_EPRINTF("fastRPC device driver is disabled, retrying...");
-    }
-    VERIFY_EPRINTF("audio adsp daemon will restart after 25ms...");
-    usleep(25000);
-  }
-  VERIFY_EPRINTF("audio adsp daemon exiting %x", nErr);
-  return nErr;
+    VERIFY_EPRINTF("audio adsp daemon exiting %x", nErr);
+    return nErr;
 }

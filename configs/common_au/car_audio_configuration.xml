@@ -42,6 +42,10 @@
                         <context context="alarm"/>
                         <context context="notification"/>
                         <context context="system_sound"/>
+                        <context context="emergency"/>
+                        <context context="safety"/>
+                        <context context="vehicle_status"/>
+                        <context context="announcement"/>
                     </device>
                 </group>
                 <group>
@@ -56,18 +60,7 @@
                         <context context="call_ring"/>
                     </device>
                 </group>
-                <group>
-                    <device address="BUS05_ALERTS">
-                        <context context="emergency"/>
-                        <context context="safety"/>
-                        <context context="vehicle_status"/>
-                        <context context="announcement"/>
-                    </device>
-                </group>
             </volumeGroups>
-            <inputDevices>
-                <inputDevice address="BUS04_INPUT"/>
-            </inputDevices>
             <displays>
                 <display port="0"/>
             </displays>
@@ -98,9 +91,6 @@
                     </device>
                 </group>
             </volumeGroups>
-            <inputDevices>
-                <inputDevice address="BUS09_INPUT_FRONT_PASSENGER"/>
-            </inputDevices>
             <displays>
                 <display port="1"/>
             </displays>
@@ -124,9 +114,6 @@
                     </device>
                 </group>
             </volumeGroups>
-            <inputDevices>
-                <inputDevice address="BUS17_INPUT_REAR_SEAT"/>
-            </inputDevices>
             <displays>
                 <display port="2"/>
             </displays>
